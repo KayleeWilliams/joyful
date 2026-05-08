@@ -8,15 +8,15 @@
     "name",
     "words"
   ],
-  "homepage": "https://github.com/haydenbleasel/joyful#readme",
+  "homepage": "https://github.com/kayleewilliams/joyful#readme",
   "bugs": {
-    "url": "https://github.com/haydenbleasel/joyful/issues"
+    "url": "https://github.com/kayleewilliams/joyful/issues"
   },
   "license": "ISC",
-  "author": "Hayden Bleasel <hello@haydenbleasel.com>",
+  "author": "Kaylee Williams <kaylee@kaylee.dev>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/haydenbleasel/joyful.git"
+    "url": "git+https://github.com/kayleewilliams/joyful.git"
   },
   "bin": {
     "joyful": "./dist/cli.mjs"
@@ -53,12 +53,14 @@
     "fix": "ultracite fix",
     "permutations": "bun scripts/permutations.ts",
     "validate": "bun scripts/validate.ts",
+    "perf": "bun scripts/perf.ts",
     "changeset": "changeset",
     "release": "changeset publish"
   },
   "devDependencies": {
     "@changesets/cli": "^2.29.8",
     "@types/node": "^25.3.1",
+    "mitata": "^1.0.34",
     "oxfmt": "^0.35.0",
     "oxlint": "^1.50.0",
     "tsup": "^8.5.1",

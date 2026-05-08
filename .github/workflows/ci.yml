@@ -25,3 +25,6 @@ jobs:
 
       - name: Run tests
         run: bun test
+
+      - name: Run performance reports
+        run: bun run perf

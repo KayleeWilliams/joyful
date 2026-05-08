@@ -40,3 +40,6 @@ yarn-error.log*
 # build
 dist/
 .env
+
+# generated reports
+BENCHMARK_REPORT.md

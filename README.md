@@ -77,6 +77,12 @@ The first word is always a prefix (adjective or color). Subsequent words are dra
 | 4        | 5,922,966,785,992      |
 | 5        | 17,567,519,487,252,272 |
 
+## Benchmarks
+
+Run `bun run perf` to generate the runtime, startup, package size, and consumer
+bundle size report. See [BENCHMARKS.md](./BENCHMARKS.md) for what the report
+measures and how to interpret it.
+
 ## Credits
 
 Based on [friendly-words](https://github.com/glitchdotcom/friendly-words) by Glitch, with curated word lists and additional categories.

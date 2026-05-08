@@ -4,8 +4,8 @@ const run = async (
   args: string[] = []
 ): Promise<{ stdout: string; stderr: string; exitCode: number }> => {
   const proc = Bun.spawn(["bun", "run", "./src/cli.ts", ...args], {
-    stdout: "pipe",
     stderr: "pipe",
+    stdout: "pipe",
   });
 
   const [stdout, stderr] = await Promise.all([
@@ -15,7 +15,7 @@ const run = async (
 
   const exitCode = await proc.exited;
 
-  return { stdout: stdout.trim(), stderr: stderr.trim(), exitCode };
+  return { exitCode, stderr: stderr.trim(), stdout: stdout.trim() };
 };
 
 describe("cli", () => {

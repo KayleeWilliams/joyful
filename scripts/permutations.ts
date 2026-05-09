@@ -1,47 +1,21 @@
-import { readdirSync } from "node:fs";
-import { join } from "node:path";
-
 // oxlint-disable-next-line import/no-relative-parent-imports
-import { joyful } from "../src";
-
-const libDir = join(import.meta.dirname, "../src/lib");
-const files = readdirSync(libDir).filter((f) => f.endsWith(".json"));
-
-const allWords: Record<string, string[]> = {};
-for (const file of files) {
-  const name = file.replace(".json", "");
-  const module = await import(join(libDir, file));
-  allWords[name] = module.default;
-}
-
-const categories = Object.entries(allWords)
-  .filter(([name]) => name !== "adjectives")
-  .map(([, words]) => words);
-
-const calculatePermutations = (segments: number): number => {
-  if (segments < 2) {
-    throw new Error("Need at least 2 words");
-  }
-
-  // Start with the number of adjectives
-  let totalPermutations = allWords.adjectives.length;
-
-  // Multiply by the total number of words in all other categories for each additional segment
-  const totalWordsInCategories = categories.reduce(
-    (sum, category) => sum + category.length,
-    0
-  );
-  for (let i = 1; i < segments; i += 1) {
-    totalPermutations *= totalWordsInCategories;
-  }
-
-  return totalPermutations;
-};
+import { joyful, permutations } from "../src";
 
 // Calculate permutations for different numbers of segments
 console.log("Possible permutations:");
 for (let i = 2; i <= 5; i += 1) {
-  console.log(`${i} words: ${calculatePermutations(i).toLocaleString()}`);
+  console.log(`${i} words: ${permutations({ segments: i }).toLocaleString()}`);
+}
+
+console.log("\nPattern permutations:");
+for (const pattern of [
+  ["adjective", "animal"],
+  ["color", "nature", "animal"],
+  ["city", "nature", "space"],
+] as const) {
+  console.log(
+    `${pattern.join("-")}: ${permutations({ pattern }).toLocaleString()}`
+  );
 }
 
 // Generate a sample of unique words

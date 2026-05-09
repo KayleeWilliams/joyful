@@ -1,6 +1,35 @@
 import { describe, expect, it } from "bun:test";
 
-import { joyful } from "./index";
+import { joyful, permutations } from "./index";
+import type { JoyfulCategory } from "./index";
+import adjectives from "./lib/adjectives.json" assert { type: "json" };
+import animals from "./lib/animals.json" assert { type: "json" };
+import cities from "./lib/cities.json" assert { type: "json" };
+import colors from "./lib/colors.json" assert { type: "json" };
+import nature from "./lib/nature.json" assert { type: "json" };
+import space from "./lib/space.json" assert { type: "json" };
+
+const categoryWords = {
+  adjective: adjectives,
+  animal: animals,
+  city: cities,
+  color: colors,
+  nature,
+  space,
+};
+
+const expectPatternWords = (
+  result: string,
+  pattern: readonly (keyof typeof categoryWords)[],
+  separator = "-"
+): void => {
+  const words = result.split(separator);
+  expect(words).toHaveLength(pattern.length);
+
+  for (const [index, category] of pattern.entries()) {
+    expect(categoryWords[category]).toContain(words[index]);
+  }
+};
 
 describe("joyful", () => {
   describe("default behavior", () => {
@@ -118,6 +147,95 @@ describe("joyful", () => {
       const result = joyful({ segments: 3 });
       const words = result.split("-");
       expect(words).toHaveLength(3);
+    });
+  });
+
+  describe("pattern option", () => {
+    it("generates words from the requested categories", () => {
+      const pattern = ["adjective", "animal"] as const;
+      const result = joyful({ pattern });
+
+      expectPatternWords(result, pattern);
+    });
+
+    it("generates 3 words in category order", () => {
+      const pattern = ["color", "nature", "animal"] as const;
+      const result = joyful({ pattern });
+
+      expectPatternWords(result, pattern);
+    });
+
+    it("supports city, nature, and space patterns", () => {
+      const pattern = ["city", "nature", "space"] as const;
+      const result = joyful({ pattern });
+
+      expectPatternWords(result, pattern);
+    });
+
+    it("uses pattern length instead of segments when both are provided", () => {
+      const result = joyful({
+        pattern: ["adjective", "animal"],
+        segments: 5,
+      });
+
+      expect(result.split("-")).toHaveLength(2);
+    });
+
+    it("does not contain duplicate words", () => {
+      for (let i = 0; i < 50; i += 1) {
+        const result = joyful({ pattern: ["color", "nature", "animal"] });
+        const words = result.split("-");
+        const uniqueWords = new Set(words);
+        expect(uniqueWords.size).toBe(words.length);
+      }
+    });
+
+    it("respects maxLength with pattern output", () => {
+      for (let i = 0; i < 50; i += 1) {
+        const pattern = ["city", "nature", "space"] as const;
+        const result = joyful({ maxLength: 30, pattern });
+
+        expect(result.length).toBeLessThanOrEqual(30);
+        expectPatternWords(result, pattern);
+      }
+    });
+
+    it("throws for unknown pattern categories", () => {
+      expect(() =>
+        joyful({ pattern: ["adjective", "planet"] as JoyfulCategory[] })
+      ).toThrow('Unknown pattern category "planet"');
+    });
+  });
+
+  describe("permutations", () => {
+    it("returns the default 2-word count", () => {
+      expect(permutations()).toBe(997_425);
+    });
+
+    it("returns the default 3-word count", () => {
+      expect(permutations({ segments: 3 })).toBe(2_917_468_125);
+    });
+
+    it("counts adjective and animal patterns", () => {
+      expect(permutations({ pattern: ["adjective", "animal"] })).toBe(46_081);
+    });
+
+    it("counts ordered 3-category patterns", () => {
+      expect(permutations({ pattern: ["color", "nature", "animal"] })).toBe(
+        4_674_684
+      );
+    });
+
+    it("throws for unknown pattern categories", () => {
+      expect(() =>
+        permutations({ pattern: ["adjective", "planet"] as JoyfulCategory[] })
+      ).toThrow('Unknown pattern category "planet"');
+    });
+
+    it("throws when segments is less than 2", () => {
+      expect(() => permutations({ segments: 1 })).toThrow(
+        "Need at least 2 words"
+      );
     });
   });
 

@@ -137,7 +137,7 @@ const processFile = (file: string, ctx: Omit<WordContext, "file">): void => {
 
   const fileCtx: WordContext = { ...ctx, file };
   content = content.filter((word) => checkWordValidity(word, fileCtx));
-  fs.writeFileSync(filePath, JSON.stringify(content, null, 2));
+  fs.writeFileSync(filePath, `${JSON.stringify(content, null, 2)}\n`);
 };
 
 const reportResults = (duplicates: Duplicate[]): void => {

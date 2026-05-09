@@ -188,10 +188,24 @@ const getUniquePatternWord = (
   pool: string[],
   maxWordLength?: number
 ): string | undefined => {
+  if (maxWordLength === undefined) {
+    if (
+      words.length >= pool.length &&
+      pool.every((word) => words.includes(word))
+    ) {
+      return undefined;
+    }
+
+    let word = getRandomElement(pool);
+    while (words.includes(word)) {
+      word = getRandomElement(pool);
+    }
+
+    return word;
+  }
+
   const candidates = pool.filter(
-    (word) =>
-      !words.includes(word) &&
-      (maxWordLength === undefined || word.length <= maxWordLength)
+    (word) => !words.includes(word) && word.length <= maxWordLength
   );
 
   return candidates.length === 0 ? undefined : getRandomElement(candidates);

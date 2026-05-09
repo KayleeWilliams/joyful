@@ -221,10 +221,43 @@ const generateUnbounded = (segments: number, separator: string): string => {
   return words.join(separator);
 };
 
+const hasRepeatedCategory = (pattern: readonly JoyfulCategory[]): boolean => {
+  for (let index = 0; index < pattern.length; index += 1) {
+    for (
+      let nextIndex = index + 1;
+      nextIndex < pattern.length;
+      nextIndex += 1
+    ) {
+      if (pattern[index] === pattern[nextIndex]) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+};
+
+const generateDistinctPatternUnbounded = (
+  pattern: readonly JoyfulCategory[],
+  separator: string
+): string => {
+  const words: string[] = [];
+
+  for (const category of pattern) {
+    words.push(getRandomElement(categoryWordLists[category]));
+  }
+
+  return words.join(separator);
+};
+
 const generatePatternUnbounded = (
   pattern: readonly JoyfulCategory[],
   separator: string
 ): string => {
+  if (!hasRepeatedCategory(pattern)) {
+    return generateDistinctPatternUnbounded(pattern, separator);
+  }
+
   const words: string[] = [];
 
   for (const category of pattern) {

@@ -83,6 +83,9 @@ const categories = [
   transportation,
 ];
 
+const categoryWords = categories.flat();
+const defaultCategoryWordCount = categoryWords.length;
+
 const getRandomElement = <T>(array: T[]): T =>
   array[Math.floor(Math.random() * array.length)];
 
@@ -132,24 +135,13 @@ const validateInput = (
   validatePattern(pattern);
 };
 
-const getDefaultCategoryWordCount = (): number => {
-  let count = 0;
-
-  for (const category of categories) {
-    count += category.length;
-  }
-
-  return count;
-};
-
 const getDefaultPermutations = (segments: number): number => {
   validateWordCount(segments);
 
   let total = prefixes.length;
-  const categoryWordCount = getDefaultCategoryWordCount();
 
   for (let index = 1; index < segments; index += 1) {
-    total *= categoryWordCount;
+    total *= defaultCategoryWordCount;
   }
 
   return total;
@@ -299,7 +291,7 @@ const pickBoundedWord = (
   remainingAfter: number
 ): string | undefined => {
   const maxWordLength = budget - remainingAfter * MIN_CATEGORY_WORD_LENGTH;
-  const hasValid = categories.flat().some((w) => w.length <= maxWordLength);
+  const hasValid = categoryWords.some((w) => w.length <= maxWordLength);
   return hasValid ? getUniqueWord(words, maxWordLength) : undefined;
 };
 

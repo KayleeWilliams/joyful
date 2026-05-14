@@ -1,51 +1,178 @@
 # joyful
 
-Generate delightful, random word combinations for your app — perfect for project names, usernames, or unique identifiers.
+Generate friendly, safe-for-work word combinations for project names, usernames, labels, demo data, and unique-looking identifiers.
 
 <div>
   <img src="https://img.shields.io/npm/dy/joyful" alt="" />
   <img src="https://img.shields.io/npm/v/joyful" alt="" />
-  <img src="https://img.shields.io/github/license/haydenbleasel/joyful" alt="" />
+  <img src="https://img.shields.io/github/license/kayleewillimams/joyful" alt="" />
 </div>
 
-## Installation
+## Quick Start
 
 ```bash
 bun add joyful
 ```
-
-## Usage
 
 ```ts
 import { joyful } from "joyful";
 
 joyful(); // "amber-fox"
 joyful({ segments: 3 }); // "golden-marble-cathedral"
-joyful({ segments: 3, separator: "_" }); // "swift_northern_lights"
+joyful({ separator: "_" }); // "swift_otter"
+```
+
+You can also use the CLI:
+
+```bash
+joyful
+joyful --segments 3
+joyful --pattern color,nature,animal
+```
+
+## Generate Names
+
+By default, `joyful()` returns two lowercase words joined with `-`. The first word is a friendly prefix, either an adjective or a color. Later words come from the broader word lists.
+
+```ts
+import { joyful } from "joyful";
+
+joyful(); // "bright-dolphin"
+joyful({ segments: 4 }); // "kind-river-cello-baker"
+joyful({ separator: "_" }); // "golden_panda"
 joyful({ maxLength: 8 }); // "tan-elk"
 ```
+
+`maxLength` filters word choices so the final string fits within the requested limit. If the limit is too short to produce a valid name, `joyful()` throws.
+
+## Pattern-Based Names
+
+Use `pattern` when you want each word to come from a specific category.
+
+```ts
+joyful({ pattern: ["adjective", "animal"] }); // "happy-dolphin"
+joyful({ pattern: ["color", "nature", "animal"] }); // "amber-river-otter"
+joyful({ pattern: ["city", "nature", "space"] }); // "kyoto-river-orbit"
+```
+
+Pattern rules:
+
+- Category names are singular, such as `animal`, `color`, `city`, and `nature`.
+- The pattern length controls the number of words.
+- `pattern` takes precedence over `segments`.
+- `separator` and `maxLength` still apply to generated names.
+- Unknown categories throw an error with the supported category names.
+
+## CLI
+
+The CLI supports the same core generation options:
+
+```bash
+joyful
+joyful --segments 3
+joyful --separator _
+joyful --max-length 12
+joyful --pattern adjective,animal
+joyful --pattern city,nature,space --separator _
+```
+
+Short flags are available for common generation options:
+
+```bash
+joyful -s 3
+joyful -p _
+joyful -m 12
+joyful -t color,nature,animal
+```
+
+## Count Permutations
+
+Use `permutations()` to count possible unbounded combinations without generating a name.
+
+```ts
+import { permutations } from "joyful";
+
+permutations(); // 997425
+permutations({ segments: 3 }); // 2917468125
+permutations({ pattern: ["adjective", "animal"] }); // 46081
+permutations({ pattern: ["color", "nature", "animal"] }); // 4674684
+```
+
+The CLI can print the same counts:
+
+```bash
+joyful --permutations
+joyful --permutations --segments 3
+joyful --permutations --pattern color,nature,animal
+```
+
+For automation, add `--json`:
+
+```bash
+joyful --permutations --pattern color,nature,animal --json
+```
+
+```json
+{
+  "pattern": ["color", "nature", "animal"],
+  "permutations": 4674684
+}
+```
+
+Permutation counts do not account for `maxLength`, because bounded generation depends on word lengths and fitting constraints.
 
 ## API
 
 ### `joyful(options?)`
 
-| Option      | Type     | Default | Description                           |
-| ----------- | -------- | ------- | ------------------------------------- |
-| `segments`  | `number` | `2`     | Number of words to generate           |
-| `separator` | `string` | `"-"`   | Character(s) between words            |
-| `maxLength` | `number` | —       | Maximum length of the returned string |
+Returns a generated name as a `string`.
 
-Returns a `string` of random words joined by the separator.
+| Option      | Type               | Default | Description                           |
+| ----------- | ------------------ | ------- | ------------------------------------- |
+| `segments`  | `number`           | `2`     | Number of words to generate           |
+| `pattern`   | `JoyfulCategory[]` | none    | Category pattern for each word        |
+| `separator` | `string`           | `"-"`   | Character(s) between words            |
+| `maxLength` | `number`           | none    | Maximum length of the returned string |
 
-When `maxLength` is set, words are filtered to fit within the constraint. Throws if the limit is too short to produce a valid result.
+### `permutations(options?)`
 
-## SFW Guarantee
+Returns the number of possible unbounded combinations as a `number`.
 
-All word lists are manually curated to be safe for work and family-friendly. Every category has been audited to exclude profanity, slurs, and negative or distressing terms. You can use joyful-generated names in any context without worry.
+| Option     | Type               | Default | Description                    |
+| ---------- | ------------------ | ------- | ------------------------------ |
+| `segments` | `number`           | `2`     | Number of words to count       |
+| `pattern`  | `JoyfulCategory[]` | none    | Category pattern for each word |
 
-## Word Categories
+### `JoyfulCategory`
 
-The first word is always a prefix (adjective or color). Subsequent words are drawn from:
+Supported pattern categories:
+
+```ts
+type JoyfulCategory =
+  | "adjective"
+  | "animal"
+  | "architecture"
+  | "art"
+  | "city"
+  | "color"
+  | "emotion"
+  | "fashion"
+  | "food"
+  | "history"
+  | "literature"
+  | "music"
+  | "mythology"
+  | "nature"
+  | "profession"
+  | "science"
+  | "space"
+  | "sport"
+  | "transportation";
+```
+
+## Word Lists
+
+All words are lowercase, single-token, safe-for-work terms.
 
 | Category       | Words |
 | -------------- | ----- |
@@ -53,6 +180,7 @@ The first word is always a prefix (adjective or color). Subsequent words are dra
 | Animals        | 203   |
 | Architecture   | 184   |
 | Art            | 186   |
+| Cities         | 73    |
 | Colors         | 114   |
 | Emotions       | 89    |
 | Fashion        | 169   |
@@ -68,14 +196,29 @@ The first word is always a prefix (adjective or color). Subsequent words are dra
 | Sports         | 154   |
 | Transportation | 183   |
 
-## Permutations
+## Default Permutations
+
+Default generation starts with an adjective or color, then draws each later word from the non-prefix lists.
 
 | Segments | Combinations           |
 | -------- | ---------------------- |
-| 2        | 673,282                |
-| 3        | 1,996,954,412          |
-| 4        | 5,922,966,785,992      |
-| 5        | 17,567,519,487,252,272 |
+| 2        | 997,425                |
+| 3        | 2,917,468,125          |
+| 4        | 8,533,594,265,625      |
+| 5        | 24,960,763,226,953,124 |
+
+## Errors And Constraints
+
+- `segments` must be at least `2`.
+- `separator` cannot be an empty string.
+- `maxLength` must be a positive integer when provided.
+- Unknown pattern categories throw an error.
+- CLI `--json` is only supported with `--permutations`.
+- CLI `--permutations` does not support `--max-length`.
+
+## SFW Guarantee
+
+All word lists are manually curated to be safe for work and family-friendly. Every category has been audited to exclude profanity, slurs, and negative or distressing terms. You can use joyful-generated names in any context without worry.
 
 ## Benchmarks
 
@@ -84,6 +227,8 @@ bundle size report. See [BENCHMARKS.md](./BENCHMARKS.md) for what the report
 measures and how to interpret it.
 
 ## Credits
+
+Originally created by [Hayden Bleasel](https://github.com/haydenbleasel).
 
 Based on [friendly-words](https://github.com/glitchdotcom/friendly-words) by Glitch, with curated word lists and additional categories.
 

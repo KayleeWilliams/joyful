@@ -2,12 +2,12 @@ import { describe, expect, it } from "bun:test";
 
 import { joyful, permutations } from "./index";
 import type { JoyfulCategory } from "./index";
-import adjectives from "./lib/adjectives.json" assert { type: "json" };
-import animals from "./lib/animals.json" assert { type: "json" };
-import cities from "./lib/cities.json" assert { type: "json" };
-import colors from "./lib/colors.json" assert { type: "json" };
-import nature from "./lib/nature.json" assert { type: "json" };
-import space from "./lib/space.json" assert { type: "json" };
+import adjectives from "./lib/adjectives.json" with { type: "json" };
+import animals from "./lib/animals.json" with { type: "json" };
+import cities from "./lib/cities.json" with { type: "json" };
+import colors from "./lib/colors.json" with { type: "json" };
+import nature from "./lib/nature.json" with { type: "json" };
+import space from "./lib/space.json" with { type: "json" };
 
 const categoryWords = {
   adjective: adjectives,

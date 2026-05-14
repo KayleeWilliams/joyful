@@ -220,6 +220,12 @@ Default generation starts with an adjective or color, then draws each later word
 
 All word lists are manually curated to be safe for work and family-friendly. Every category has been audited to exclude profanity, slurs, and negative or distressing terms. You can use joyful-generated names in any context without worry.
 
+## Benchmarks
+
+Run `bun run perf` to generate the runtime, startup, package size, and consumer
+bundle size report. See [BENCHMARKS.md](./BENCHMARKS.md) for what the report
+measures and how to interpret it.
+
 ## Credits
 
 Originally created by [Hayden Bleasel](https://github.com/haydenbleasel).

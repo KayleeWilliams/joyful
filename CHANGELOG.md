@@ -1,5 +1,11 @@
 # joyful
 
+## 1.2.0
+
+### Minor Changes
+
+- f1c2c9e: Add pattern-based generation, city words, permutation counting, and CLI permutation output.
+
 ## 1.1.3
 
 ### Patch Changes

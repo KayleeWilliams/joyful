@@ -41,7 +41,7 @@ const checkExactDuplicate = (word: string, ctx: WordContext): boolean => {
 };
 
 const checkRelatedWord = (word: string, ctx: WordContext): boolean => {
-  const baseWord = word.replace(/ing$/, "");
+  const baseWord = word.replace(/ing$/u, "");
   if (ctx.relatedWords.has(baseWord)) {
     const relatedWord = ctx.relatedWords.get(baseWord) as string;
     ctx.duplicates.push({
@@ -55,7 +55,7 @@ const checkRelatedWord = (word: string, ctx: WordContext): boolean => {
 };
 
 const checkPluralOrYEnding = (word: string, ctx: WordContext): boolean => {
-  const singularWord = word.replace(/e?s$/, "");
+  const singularWord = word.replace(/e?s$/u, "");
   if (ctx.wordMap.has(singularWord)) {
     ctx.duplicates.push({
       file1: ctx.wordMap.get(singularWord) as string,
@@ -65,7 +65,7 @@ const checkPluralOrYEnding = (word: string, ctx: WordContext): boolean => {
     return false;
   }
 
-  const baseWordY = word.replace(/y$/, "");
+  const baseWordY = word.replace(/y$/u, "");
   if (ctx.wordMap.has(baseWordY)) {
     ctx.duplicates.push({
       file1: ctx.wordMap.get(baseWordY) as string,
@@ -79,7 +79,7 @@ const checkPluralOrYEnding = (word: string, ctx: WordContext): boolean => {
 
 const registerWord = (word: string, ctx: WordContext): void => {
   ctx.wordMap.set(word, ctx.file);
-  const baseWord = word.replace(/ing$/, "");
+  const baseWord = word.replace(/ing$/u, "");
   if (word.endsWith("ing")) {
     ctx.relatedWords.set(baseWord, word);
   } else {
@@ -109,7 +109,7 @@ const reportDuplicate = ({ word, file1, file2 }: Duplicate): void => {
     console.log(`- "${word}" removed from ${file1} (hyphenated word)`);
   } else if (file2 === "Contains space") {
     console.log(`- "${word}" removed from ${file1} (contains space)`);
-  } else if (/e?s$/.test(word)) {
+  } else if (/e?s$/u.test(word)) {
     console.log(
       `- "${word}" removed from ${file2} (plural of word in ${file1})`
     );
@@ -127,7 +127,7 @@ const processFile = (file: string, ctx: Omit<WordContext, "file">): void => {
   let content: string[] = [];
 
   try {
-    content = JSON.parse(fs.readFileSync(filePath, "utf8")) as string[];
+    content = JSON.parse(fs.readFileSync(filePath, "utf-8")) as string[];
   } catch (error) {
     console.error(
       `Error parsing JSON in file ${file}: ${(error as Error).message}`

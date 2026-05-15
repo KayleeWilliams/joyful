@@ -14,7 +14,7 @@ interface RuntimeResult {
 
 const runCommand = (args: string[]): CommandResult => {
   const result = spawnSync("bun", args, {
-    encoding: "utf8",
+    encoding: "utf-8",
     stdio: ["ignore", "pipe", "pipe"],
   });
 
@@ -39,7 +39,7 @@ const runCommand = (args: string[]): CommandResult => {
 const rootDir = path.join(import.meta.dirname, "..");
 const reportPath = path.join(rootDir, "BENCHMARK_REPORT.md");
 const escapeCharacter = String.fromCodePoint(27);
-const ansiPattern = new RegExp(`${escapeCharacter}\\[[0-9;]*m`, "g");
+const ansiPattern = new RegExp(`${escapeCharacter}\\[[0-9;]*m`, "gu");
 
 const section = (title: string, body: string): string =>
   `## ${title}\n\n${body.trim()}\n`;
@@ -50,7 +50,7 @@ const codeBlock = (contents: string): string =>
 const stripAnsi = (value: string): string => value.replace(ansiPattern, "");
 
 const parseRuntimeResults = (output: string): RuntimeResult[] =>
-  [...output.matchAll(/^(.+?)\s+([0-9.]+)\s+(ns|µs|ms)\/iter\b/gm)].map(
+  [...output.matchAll(/^(.+?)\s+([0-9.]+)\s+(ns|µs|ms)\/iter\b/gmu)].map(
     ([, caseName, value, unit]) => ({
       caseName: caseName.trim(),
       mean: `${value} ${unit}/iter`,

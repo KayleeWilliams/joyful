@@ -76,7 +76,7 @@ const getDistFileSizes = (): DistFileSize[] => {
 const getPackSummary = (): PackSummary => {
   const output = execFileSync("npm", ["pack", "--dry-run", "--json"], {
     cwd: rootDir,
-    encoding: "utf8",
+    encoding: "utf-8",
     env: {
       ...process.env,
       npm_config_cache: path.join(tmpdir(), "joyful-npm-cache"),
@@ -139,7 +139,7 @@ const buildConsumerBundle = ({
     ],
     {
       cwd: rootDir,
-      encoding: "utf8",
+      encoding: "utf-8",
       stdio: ["ignore", "ignore", "inherit"],
     }
   );
@@ -147,7 +147,7 @@ const buildConsumerBundle = ({
 
 const readConsumerBundle = (outDir: string): Buffer => {
   const bundleFile = readdirSync(outDir).find((file) =>
-    /\.(?:mjs|js)$/.test(file)
+    /\.(?:mjs|js)$/u.test(file)
   );
 
   if (!bundleFile) {

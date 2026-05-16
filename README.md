@@ -5,7 +5,7 @@ Generate friendly, safe-for-work word combinations for project names, usernames,
 <div>
   <img src="https://img.shields.io/npm/dy/joyful" alt="" />
   <img src="https://img.shields.io/npm/v/joyful" alt="" />
-  <img src="https://img.shields.io/github/license/kayleewillimams/joyful" alt="" />
+  <img src="https://img.shields.io/github/license/KayleeWilliams/joyful" alt="" />
 </div>
 
 ## Quick Start

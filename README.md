@@ -234,4 +234,4 @@ Based on [friendly-words](https://github.com/glitchdotcom/friendly-words) by Gli
 
 ## License
 
-ISC
+MIT

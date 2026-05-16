@@ -8,18 +8,18 @@
     "name",
     "words"
   ],
-  "homepage": "https://github.com/kayleewilliams/joyful#readme",
+  "homepage": "https://github.com/KayleeWilliams/joyful#readme",
   "bugs": {
-    "url": "https://github.com/kayleewilliams/joyful/issues"
+    "url": "https://github.com/KayleeWilliams/joyful/issues"
   },
   "license": "ISC",
   "author": "Kaylee Williams <kaylee@kaylee.dev>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/kayleewilliams/joyful.git"
+    "url": "git+https://github.com/KayleeWilliams/joyful.git"
   },
   "bin": {
-    "joyful": "./dist/cli.mjs"
+    "joyful": "dist/cli.mjs"
   },
   "files": [
     "dist"

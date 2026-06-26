@@ -20,6 +20,7 @@ import { joyful } from "joyful";
 joyful(); // "amber-fox"
 joyful({ segments: 3 }); // "golden-marble-cathedral"
 joyful({ separator: "_" }); // "swift_otter"
+joyful({ omit: ["fox"] }); // excludes "fox" from generated names
 ```
 
 You can also use the CLI:
@@ -28,6 +29,7 @@ You can also use the CLI:
 joyful
 joyful --segments 3
 joyful --pattern color,nature,animal
+joyful --omit fox,wolf
 ```
 
 ## Generate Names
@@ -63,6 +65,33 @@ Pattern rules:
 - `separator` and `maxLength` still apply to generated names.
 - Unknown categories throw an error with the supported category names.
 
+## Custom Word Lists
+
+Use `wordLists` to add named word pools that can be selected by `pattern`.
+Use `omit` to exclude exact words from both built-in and custom lists.
+
+```ts
+joyful({
+  pattern: ["fruit", "texture"],
+  wordLists: {
+    fruit: ["apple", "pear"],
+    texture: ["linen", "silk"],
+  },
+}); // "pear-linen"
+
+joyful({
+  omit: ["pear", "silk"],
+  pattern: ["fruit", "texture"],
+  wordLists: {
+    fruit: ["apple", "pear"],
+    texture: ["linen", "silk"],
+  },
+}); // "apple-linen"
+```
+
+Custom category names are additive. If a custom list uses a built-in category
+name, such as `animal`, it replaces that built-in category for the current call.
+
 ## CLI
 
 The CLI supports the same core generation options:
@@ -74,6 +103,8 @@ joyful --separator _
 joyful --max-length 12
 joyful --pattern adjective,animal
 joyful --pattern city,nature,space --separator _
+joyful --word-list fruit=apple,pear --word-list texture=linen,silk --pattern fruit,texture
+joyful --omit fox,wolf
 ```
 
 Short flags are available for common generation options:
@@ -93,9 +124,17 @@ Use `permutations()` to count possible unbounded combinations without generating
 import { permutations } from "joyful";
 
 permutations(); // 997425
-permutations({ segments: 3 }); // 2917468125
+permutations({ segments: 3 }); // 2916470700
 permutations({ pattern: ["adjective", "animal"] }); // 46081
 permutations({ pattern: ["color", "nature", "animal"] }); // 4674684
+permutations({
+  omit: ["pear"],
+  pattern: ["fruit", "texture"],
+  wordLists: {
+    fruit: ["apple", "pear"],
+    texture: ["linen", "silk"],
+  },
+}); // 2
 ```
 
 The CLI can print the same counts:
@@ -104,6 +143,7 @@ The CLI can print the same counts:
 joyful --permutations
 joyful --permutations --segments 3
 joyful --permutations --pattern color,nature,animal
+joyful --permutations --word-list fruit=apple,pear --pattern fruit,animal
 ```
 
 For automation, add `--json`:
@@ -119,7 +159,7 @@ joyful --permutations --pattern color,nature,animal --json
 }
 ```
 
-Permutation counts do not account for `maxLength`, because bounded generation depends on word lengths and fitting constraints.
+Permutation counts include only unique names that can be generated without repeated words. They do not account for `maxLength`, because bounded generation depends on word lengths and fitting constraints.
 
 ## API
 
@@ -127,21 +167,25 @@ Permutation counts do not account for `maxLength`, because bounded generation de
 
 Returns a generated name as a `string`.
 
-| Option      | Type               | Default | Description                           |
-| ----------- | ------------------ | ------- | ------------------------------------- |
-| `segments`  | `number`           | `2`     | Number of words to generate           |
-| `pattern`   | `JoyfulCategory[]` | none    | Category pattern for each word        |
-| `separator` | `string`           | `"-"`   | Character(s) between words            |
-| `maxLength` | `number`           | none    | Maximum length of the returned string |
+| Option      | Type                                    | Default | Description                           |
+| ----------- | --------------------------------------- | ------- | ------------------------------------- |
+| `segments`  | `number`                                | `2`     | Number of words to generate           |
+| `pattern`   | `JoyfulCategory[]` or custom `string[]` | none    | Category pattern for each word        |
+| `wordLists` | `Record<string, readonly string[]>`     | none    | Custom named word lists               |
+| `omit`      | `readonly string[]`                     | none    | Exact words to exclude                |
+| `separator` | `string`                                | `"-"`   | Character(s) between words            |
+| `maxLength` | `number`                                | none    | Maximum length of the returned string |
 
 ### `permutations(options?)`
 
 Returns the number of possible unbounded combinations as a `number`.
 
-| Option     | Type               | Default | Description                    |
-| ---------- | ------------------ | ------- | ------------------------------ |
-| `segments` | `number`           | `2`     | Number of words to count       |
-| `pattern`  | `JoyfulCategory[]` | none    | Category pattern for each word |
+| Option      | Type                                    | Default | Description                    |
+| ----------- | --------------------------------------- | ------- | ------------------------------ |
+| `segments`  | `number`                                | `2`     | Number of words to count       |
+| `pattern`   | `JoyfulCategory[]` or custom `string[]` | none    | Category pattern for each word |
+| `wordLists` | `Record<string, readonly string[]>`     | none    | Custom named word lists        |
+| `omit`      | `readonly string[]`                     | none    | Exact words to exclude         |
 
 ### `JoyfulCategory`
 
@@ -203,9 +247,9 @@ Default generation starts with an adjective or color, then draws each later word
 | Segments | Combinations           |
 | -------- | ---------------------- |
 | 2        | 997,425                |
-| 3        | 2,917,468,125          |
-| 4        | 8,533,594,265,625      |
-| 5        | 24,960,763,226,953,124 |
+| 3        | 2,916,470,700          |
+| 4        | 8,524,843,856,100      |
+| 5        | 24,909,593,747,524,200 |
 
 ## Errors And Constraints
 
@@ -213,6 +257,7 @@ Default generation starts with an adjective or color, then draws each later word
 - `separator` cannot be an empty string.
 - `maxLength` must be a positive integer when provided.
 - Unknown pattern categories throw an error.
+- Custom word list names cannot be empty.
 - CLI `--json` is only supported with `--permutations`.
 - CLI `--permutations` does not support `--max-length`.
 

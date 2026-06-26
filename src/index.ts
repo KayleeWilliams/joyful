@@ -18,21 +18,60 @@ import space from "./lib/space.json" with { type: "json" };
 import sports from "./lib/sports.json" with { type: "json" };
 import transportation from "./lib/transportation.json" with { type: "json" };
 
-export interface JoyfulOptions {
+export type JoyfulWordLists = Record<string, readonly string[]>;
+
+interface BaseJoyfulOptions {
   maxLength?: number;
-  pattern?: readonly JoyfulCategory[];
+  omit?: readonly string[];
   segments?: number;
   separator?: string;
 }
 
-export interface PermutationsOptions {
-  pattern?: readonly JoyfulCategory[];
-  segments?: number;
+export type JoyfulOptions =
+  | (BaseJoyfulOptions & {
+      pattern?: readonly JoyfulCategory[];
+      wordLists?: undefined;
+    })
+  | (BaseJoyfulOptions & {
+      pattern?: readonly string[];
+      wordLists: JoyfulWordLists;
+    });
+
+export type PermutationsOptions =
+  | {
+      omit?: readonly string[];
+      pattern?: readonly JoyfulCategory[];
+      segments?: number;
+      wordLists?: undefined;
+    }
+  | {
+      omit?: readonly string[];
+      pattern?: readonly string[];
+      segments?: number;
+      wordLists: JoyfulWordLists;
+    };
+
+interface ActiveWordLists {
+  categoryNames: string[];
+  categoryWordLists: Record<string, string[]>;
+  categoryWords: string[];
+  prefixes: string[];
 }
 
-const MIN_CATEGORY_WORD_LENGTH = 2;
+interface DefaultWordPools {
+  categoryWords: string[];
+  prefixes: string[];
+}
 
-const prefixes = [...adjectives, ...colors];
+interface GenerationOptions {
+  categoryWordLists: Record<string, string[]>;
+  categoryWords: string[];
+  prefixes: string[];
+}
+
+interface ResolvedOptions extends GenerationOptions {
+  categoryNames: string[];
+}
 
 const categoryWordLists = {
   adjective: adjectives,
@@ -60,9 +99,6 @@ export type JoyfulCategory = keyof typeof categoryWordLists;
 
 const categoryNames = Object.keys(categoryWordLists) as JoyfulCategory[];
 
-const isJoyfulCategory = (category: string): category is JoyfulCategory =>
-  Object.hasOwn(categoryWordLists, category);
-
 const categories = [
   animals,
   architecture,
@@ -84,20 +120,90 @@ const categories = [
 ];
 
 const categoryWords = categories.flat();
-const defaultCategoryWordCount = categoryWords.length;
+const prefixes = [...adjectives, ...colors];
+const defaultWordLists: ActiveWordLists = {
+  categoryNames,
+  categoryWordLists,
+  categoryWords,
+  prefixes,
+};
 
 const getRandomElement = <T>(array: T[]): T =>
   array[Math.floor(Math.random() * array.length)];
 
-const validatePattern = (pattern?: readonly JoyfulCategory[]): void => {
+const isStringArray = (value: unknown): value is readonly string[] =>
+  Array.isArray(value) && value.every((word) => typeof word === "string");
+
+const uniqueWords = (words: readonly string[]): string[] => [...new Set(words)];
+
+const validateWordLists = (wordLists?: JoyfulWordLists): void => {
+  if (!wordLists) {
+    return;
+  }
+
+  for (const [name, words] of Object.entries(wordLists)) {
+    if (!name) {
+      throw new Error("Custom word list names cannot be empty");
+    }
+
+    if (!isStringArray(words)) {
+      throw new Error(`Custom word list "${name}" must contain strings`);
+    }
+  }
+};
+
+const filterWords = (
+  words: readonly string[],
+  omittedWords: ReadonlySet<string>
+): string[] => uniqueWords(words).filter((word) => !omittedWords.has(word));
+
+const getActiveWordLists = (
+  wordLists?: JoyfulWordLists,
+  omit: readonly string[] = []
+): ActiveWordLists => {
+  validateWordLists(wordLists);
+
+  if (!wordLists && omit.length === 0) {
+    return defaultWordLists;
+  }
+
+  const omittedWords = new Set(omit);
+  const mergedWordLists = { ...categoryWordLists, ...wordLists };
+  const activeCategoryWordLists: Record<string, string[]> = {};
+
+  for (const [name, words] of Object.entries(mergedWordLists)) {
+    activeCategoryWordLists[name] = filterWords(words, omittedWords);
+  }
+
+  const activeCategoryNames = Object.keys(activeCategoryWordLists);
+  const activeCategories = Object.entries(activeCategoryWordLists)
+    .filter(([name]) => name !== "adjective" && name !== "color")
+    .map(([, words]) => words);
+
+  return {
+    categoryNames: activeCategoryNames,
+    categoryWordLists: activeCategoryWordLists,
+    categoryWords: uniqueWords(activeCategories.flat()),
+    prefixes: uniqueWords([
+      ...(activeCategoryWordLists.adjective ?? []),
+      ...(activeCategoryWordLists.color ?? []),
+    ]),
+  };
+};
+
+const validatePattern = (
+  availableCategoryNames: readonly string[],
+  availableWordLists: Record<string, string[]>,
+  pattern?: readonly string[]
+): void => {
   if (!pattern) {
     return;
   }
 
   for (const category of pattern) {
-    if (!isJoyfulCategory(category)) {
+    if (!Object.hasOwn(availableWordLists, category)) {
       throw new Error(
-        `Unknown pattern category "${category}". Expected one of: ${categoryNames.join(
+        `Unknown pattern category "${category}". Expected one of: ${availableCategoryNames.join(
           ", "
         )}`
       );
@@ -115,7 +221,8 @@ const validateInput = (
   segments: number,
   separator: string,
   maxLength?: number,
-  pattern?: readonly JoyfulCategory[]
+  pattern?: readonly string[],
+  resolvedOptions: ResolvedOptions = defaultWordLists
 ): void => {
   const wordCount = pattern?.length ?? segments;
 
@@ -132,47 +239,120 @@ const validateInput = (
     throw new Error("maxLength must be a positive integer");
   }
 
-  validatePattern(pattern);
+  validatePattern(
+    resolvedOptions.categoryNames,
+    resolvedOptions.categoryWordLists,
+    pattern
+  );
 };
 
-const getDefaultPermutations = (segments: number): number => {
-  validateWordCount(segments);
-
-  let total = prefixes.length;
-
-  for (let index = 1; index < segments; index += 1) {
-    total *= defaultCategoryWordCount;
+const getFallingFactorial = (value: number, count: number): number => {
+  if (value < count) {
+    return 0;
   }
-
-  return total;
-};
-
-const getPatternPermutations = (pattern: readonly JoyfulCategory[]): number => {
-  validateWordCount(pattern.length);
-  validatePattern(pattern);
 
   let total = 1;
 
-  for (const category of pattern) {
-    total *= categoryWordLists[category].length;
+  for (let offset = 0; offset < count; offset += 1) {
+    total *= value - offset;
   }
 
   return total;
 };
 
-const getUniqueWord = (words: string[], maxWordLength?: number): string => {
-  const category = getRandomElement(categories);
-  const pool =
-    maxWordLength === undefined
-      ? category
-      : category.filter((w) => w.length <= maxWordLength);
+const getDefaultPermutations = (
+  segments: number,
+  wordPools: DefaultWordPools = defaultWordLists
+): number => {
+  validateWordCount(segments);
 
-  if (pool.length === 0) {
-    return getUniqueWord(words, maxWordLength);
+  let total = 0;
+  const categoryWordsSet = new Set(wordPools.categoryWords);
+
+  for (const prefix of wordPools.prefixes) {
+    const availableCategoryWords =
+      wordPools.categoryWords.length - (categoryWordsSet.has(prefix) ? 1 : 0);
+    total += getFallingFactorial(availableCategoryWords, segments - 1);
   }
 
-  const word = getRandomElement(pool);
-  return words.includes(word) ? getUniqueWord(words, maxWordLength) : word;
+  return total;
+};
+
+const haveSameWords = (a: readonly string[], b: readonly string[]): boolean => {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  const words = new Set(a);
+  return b.every((word) => words.has(word));
+};
+
+const arePairwiseDisjoint = (pools: readonly string[][]): boolean => {
+  const seen = new Set<string>();
+
+  for (const pool of pools) {
+    for (const word of pool) {
+      if (seen.has(word)) {
+        return false;
+      }
+
+      seen.add(word);
+    }
+  }
+
+  return true;
+};
+
+const countUniquePatternPermutations = (pools: string[][]): number => {
+  if (pools.some((pool) => pool.length === 0)) {
+    return 0;
+  }
+
+  if (arePairwiseDisjoint(pools)) {
+    return pools.reduce((total, pool) => total * pool.length, 1);
+  }
+
+  if (pools.every((pool) => haveSameWords(pool, pools[0]))) {
+    return getFallingFactorial(pools[0].length, pools.length);
+  }
+
+  const orderedPools = pools.toSorted((a, b) => a.length - b.length);
+
+  const countFrom = (index: number, words: readonly string[]): number => {
+    if (index >= orderedPools.length) {
+      return 1;
+    }
+
+    let total = 0;
+
+    for (const word of orderedPools[index]) {
+      if (!words.includes(word)) {
+        total += countFrom(index + 1, [...words, word]);
+      }
+    }
+
+    return total;
+  };
+
+  return countFrom(0, []);
+};
+
+const getPatternPermutations = (
+  pattern: readonly string[],
+  resolvedOptions: ResolvedOptions = defaultWordLists
+): number => {
+  validateWordCount(pattern.length);
+  validatePattern(
+    resolvedOptions.categoryNames,
+    resolvedOptions.categoryWordLists,
+    pattern
+  );
+
+  const pools = pattern.map((category) =>
+    uniqueWords(resolvedOptions.categoryWordLists[category] ?? [])
+  );
+
+  return countUniquePatternPermutations(pools);
 };
 
 const getUniquePatternWord = (
@@ -203,57 +383,103 @@ const getUniquePatternWord = (
   return candidates.length === 0 ? undefined : getRandomElement(candidates);
 };
 
-const generateUnbounded = (segments: number, separator: string): string => {
-  const words: string[] = [getRandomElement(prefixes)];
+const getUniqueWord = (
+  words: string[],
+  pool: string[],
+  maxWordLength?: number
+): string | undefined => getUniquePatternWord(words, pool, maxWordLength);
 
-  for (let index = 1; index < segments; index += 1) {
-    words.push(getUniqueWord(words));
+const canFillPattern = (
+  pools: string[][],
+  startIndex: number,
+  words: readonly string[],
+  budget?: number
+): boolean => {
+  if (startIndex >= pools.length) {
+    return true;
   }
 
-  return words.join(separator);
-};
+  for (const word of pools[startIndex]) {
+    if (budget !== undefined && word.length > budget) {
+      continue;
+    }
 
-const hasRepeatedCategory = (pattern: readonly JoyfulCategory[]): boolean => {
-  for (let index = 0; index < pattern.length; index += 1) {
-    for (
-      let nextIndex = index + 1;
-      nextIndex < pattern.length;
-      nextIndex += 1
+    if (
+      !words.includes(word) &&
+      canFillPattern(
+        pools,
+        startIndex + 1,
+        [...words, word],
+        budget === undefined ? undefined : budget - word.length
+      )
     ) {
-      if (pattern[index] === pattern[nextIndex]) {
-        return true;
-      }
+      return true;
     }
   }
 
   return false;
 };
 
-const generateDistinctPatternUnbounded = (
-  pattern: readonly JoyfulCategory[],
-  separator: string
-): string => {
-  const words: string[] = [];
+const getViablePatternWord = (
+  pools: string[][],
+  index: number,
+  words: string[],
+  budget?: number
+): string | undefined => {
+  const candidates = pools[index].filter(
+    (word) =>
+      !words.includes(word) &&
+      (budget === undefined || word.length <= budget) &&
+      canFillPattern(
+        pools,
+        index + 1,
+        [...words, word],
+        budget === undefined ? undefined : budget - word.length
+      )
+  );
 
-  for (const category of pattern) {
-    words.push(getRandomElement(categoryWordLists[category]));
+  return candidates.length === 0 ? undefined : getRandomElement(candidates);
+};
+
+const notEnoughWordsError = (): Error =>
+  new Error("Not enough unique words to generate a result");
+
+const generateUnbounded = (
+  segments: number,
+  separator: string,
+  wordPools: DefaultWordPools
+): string => {
+  if (wordPools.prefixes.length === 0) {
+    throw notEnoughWordsError();
+  }
+
+  const words: string[] = [getRandomElement(wordPools.prefixes)];
+
+  for (let index = 1; index < segments; index += 1) {
+    const word = getUniqueWord(words, wordPools.categoryWords);
+
+    if (!word) {
+      throw notEnoughWordsError();
+    }
+
+    words.push(word);
   }
 
   return words.join(separator);
 };
 
 const generatePatternUnbounded = (
-  pattern: readonly JoyfulCategory[],
-  separator: string
+  pattern: readonly string[],
+  separator: string,
+  activeCategoryWordLists: Record<string, string[]>
 ): string => {
-  if (!hasRepeatedCategory(pattern)) {
-    return generateDistinctPatternUnbounded(pattern, separator);
-  }
-
+  const pools = pattern.map(
+    (category) => activeCategoryWordLists[category] ?? []
+  );
   const words: string[] = [];
 
-  for (const category of pattern) {
-    const word = getUniquePatternWord(words, categoryWordLists[category]);
+  for (const [index, category] of pattern.entries()) {
+    const word = getViablePatternWord(pools, index, words);
 
     if (!word) {
       throw new Error(
@@ -276,23 +502,42 @@ const tooShortError = (
     `maxLength ${maxLength} is too short to generate ${segments} segments with separator "${separator}"`
   );
 
+const getMinimumWordLength = (pool: string[]): number => {
+  let minimum = Number.POSITIVE_INFINITY;
+
+  for (const word of pool) {
+    minimum = Math.min(minimum, word.length);
+  }
+
+  return minimum;
+};
+
 const pickBoundedPrefix = (
   budget: number,
-  segments: number
+  segments: number,
+  wordPools: DefaultWordPools
 ): string | undefined => {
-  const maxPrefixLength = budget - (segments - 1) * MIN_CATEGORY_WORD_LENGTH;
-  const filtered = prefixes.filter((w) => w.length <= maxPrefixLength);
+  const minimumCategoryWordLength = getMinimumWordLength(
+    wordPools.categoryWords
+  );
+  const maxPrefixLength = budget - (segments - 1) * minimumCategoryWordLength;
+  const filtered = wordPools.prefixes.filter(
+    (w) => w.length <= maxPrefixLength
+  );
   return filtered.length === 0 ? undefined : getRandomElement(filtered);
 };
 
 const pickBoundedWord = (
   words: string[],
   budget: number,
-  remainingAfter: number
+  remainingAfter: number,
+  wordPools: DefaultWordPools
 ): string | undefined => {
-  const maxWordLength = budget - remainingAfter * MIN_CATEGORY_WORD_LENGTH;
-  const hasValid = categoryWords.some((w) => w.length <= maxWordLength);
-  return hasValid ? getUniqueWord(words, maxWordLength) : undefined;
+  const minimumCategoryWordLength = getMinimumWordLength(
+    wordPools.categoryWords
+  );
+  const maxWordLength = budget - remainingAfter * minimumCategoryWordLength;
+  return getUniqueWord(words, wordPools.categoryWords, maxWordLength);
 };
 
 const fillBoundedWords = (
@@ -300,12 +545,18 @@ const fillBoundedWords = (
   segments: number,
   budget: number,
   maxLength: number,
-  separator: string
+  separator: string,
+  wordPools: DefaultWordPools
 ): number => {
   let remaining = budget;
 
   for (let index = 1; index < segments; index += 1) {
-    const word = pickBoundedWord(words, remaining, segments - index - 1);
+    const word = pickBoundedWord(
+      words,
+      remaining,
+      segments - index - 1,
+      wordPools
+    );
 
     if (!word) {
       throw tooShortError(maxLength, segments, separator);
@@ -316,16 +567,6 @@ const fillBoundedWords = (
   }
 
   return remaining;
-};
-
-const getMinimumWordLength = (pool: string[]): number => {
-  let minimum = Number.POSITIVE_INFINITY;
-
-  for (const word of pool) {
-    minimum = Math.min(minimum, word.length);
-  }
-
-  return minimum;
 };
 
 const getMinimumRemainingLength = (
@@ -344,10 +585,11 @@ const getMinimumRemainingLength = (
 const generateBounded = (
   segments: number,
   separator: string,
-  maxLength: number
+  maxLength: number,
+  wordPools: DefaultWordPools
 ): string => {
   const budget = maxLength - (segments - 1) * separator.length;
-  const prefix = pickBoundedPrefix(budget, segments);
+  const prefix = pickBoundedPrefix(budget, segments, wordPools);
 
   if (!prefix) {
     throw tooShortError(maxLength, segments, separator);
@@ -359,7 +601,8 @@ const generateBounded = (
     segments,
     budget - prefix.length,
     maxLength,
-    separator
+    separator,
+    wordPools
   );
   return words.join(separator);
 };
@@ -373,9 +616,7 @@ const fillPatternBoundedWords = (
 ): void => {
   let remaining = budget;
   for (let index = 0; index < pools.length; index += 1) {
-    const maxWordLength =
-      remaining - getMinimumRemainingLength(pools, index + 1);
-    const word = getUniquePatternWord(words, pools[index], maxWordLength);
+    const word = getViablePatternWord(pools, index, words, remaining);
 
     if (!word) {
       throw tooShortError(maxLength, pools.length, separator);
@@ -387,11 +628,14 @@ const fillPatternBoundedWords = (
 };
 
 const generatePatternBounded = (
-  pattern: readonly JoyfulCategory[],
+  pattern: readonly string[],
   separator: string,
-  maxLength: number
+  maxLength: number,
+  activeCategoryWordLists: Record<string, string[]>
 ): string => {
-  const pools = pattern.map((category) => categoryWordLists[category]);
+  const pools = pattern.map(
+    (category) => activeCategoryWordLists[category] ?? []
+  );
   const budget = maxLength - (pattern.length - 1) * separator.length;
 
   if (budget < getMinimumRemainingLength(pools, 0)) {
@@ -404,31 +648,49 @@ const generatePatternBounded = (
 };
 
 export const joyful = (options: JoyfulOptions = {}): string => {
-  const { maxLength, pattern, segments = 2, separator = "-" } = options;
+  const {
+    maxLength,
+    omit = [],
+    pattern,
+    segments = 2,
+    separator = "-",
+    wordLists,
+  } = options;
+  const resolvedOptions = getActiveWordLists(wordLists, omit);
 
-  validateInput(segments, separator, maxLength, pattern);
+  validateInput(segments, separator, maxLength, pattern, resolvedOptions);
 
   if (pattern) {
     if (maxLength === undefined) {
-      return generatePatternUnbounded(pattern, separator);
+      return generatePatternUnbounded(
+        pattern,
+        separator,
+        resolvedOptions.categoryWordLists
+      );
     }
 
-    return generatePatternBounded(pattern, separator, maxLength);
+    return generatePatternBounded(
+      pattern,
+      separator,
+      maxLength,
+      resolvedOptions.categoryWordLists
+    );
   }
 
   if (maxLength === undefined) {
-    return generateUnbounded(segments, separator);
+    return generateUnbounded(segments, separator, resolvedOptions);
   }
 
-  return generateBounded(segments, separator, maxLength);
+  return generateBounded(segments, separator, maxLength, resolvedOptions);
 };
 
 export const permutations = (options: PermutationsOptions = {}): number => {
-  const { pattern, segments = 2 } = options;
+  const { omit = [], pattern, segments = 2, wordLists } = options;
+  const resolvedOptions = getActiveWordLists(wordLists, omit);
 
   if (pattern) {
-    return getPatternPermutations(pattern);
+    return getPatternPermutations(pattern, resolvedOptions);
   }
 
-  return getDefaultPermutations(segments);
+  return getDefaultPermutations(segments, resolvedOptions);
 };

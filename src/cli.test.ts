@@ -86,6 +86,59 @@ describe("cli", () => {
     });
   });
 
+  describe("--word-list and --omit flags", () => {
+    it("generates words from custom CLI word lists", async () => {
+      const { stdout, exitCode } = await run([
+        "--word-list",
+        "fruit=apple",
+        "--word-list",
+        "texture=linen",
+        "--pattern",
+        "fruit,texture",
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toBe("apple-linen");
+    });
+
+    it("omits words from custom CLI word lists", async () => {
+      const { stdout, exitCode } = await run([
+        "--word-list",
+        "fruit=apple,pear",
+        "--word-list",
+        "texture=linen,silk",
+        "--omit",
+        "pear,silk",
+        "--pattern",
+        "fruit,texture",
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(stdout).toBe("apple-linen");
+    });
+
+    it("supports custom list permutations as JSON", async () => {
+      const { stdout, exitCode } = await run([
+        "--permutations",
+        "--json",
+        "--word-list",
+        "fruit=apple,pear",
+        "--word-list",
+        "texture=linen,silk,velvet",
+        "--omit",
+        "pear",
+        "--pattern",
+        "fruit,texture",
+      ]);
+
+      expect(exitCode).toBe(0);
+      expect(JSON.parse(stdout)).toEqual({
+        pattern: ["fruit", "texture"],
+        permutations: 3,
+      });
+    });
+  });
+
   describe("--separator flag", () => {
     it("uses underscore with --separator _", async () => {
       const { stdout, exitCode } = await run(["--separator", "_"]);
@@ -152,7 +205,7 @@ describe("cli", () => {
       ]);
 
       expect(exitCode).toBe(0);
-      expect(stdout).toBe("3 words: 2,917,468,125");
+      expect(stdout).toBe("3 words: 2,916,470,700");
     });
 
     it("prints a single segment count as JSON", async () => {
@@ -165,7 +218,7 @@ describe("cli", () => {
 
       expect(exitCode).toBe(0);
       expect(JSON.parse(stdout)).toEqual({
-        permutations: 2_917_468_125,
+        permutations: 2_916_470_700,
         segments: 3,
       });
     });
@@ -247,6 +300,20 @@ describe("cli", () => {
       const { stderr, exitCode } = await run(["--pattern", "adjective,planet"]);
       expect(exitCode).toBe(1);
       expect(stderr).toContain('Unknown pattern category "planet"');
+    });
+
+    it("exits with code 1 for invalid custom word list syntax", async () => {
+      const { stderr, exitCode } = await run(["--word-list", "fruit"]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain(
+        '--word-list must use the format "name=word,word"'
+      );
+    });
+
+    it("exits with code 1 when a flag value is missing", async () => {
+      const { stderr, exitCode } = await run(["--omit", "--pattern", "animal"]);
+      expect(exitCode).toBe(1);
+      expect(stderr).toContain("--omit requires a value");
     });
 
     it("exits with code 1 for json without permutations", async () => {

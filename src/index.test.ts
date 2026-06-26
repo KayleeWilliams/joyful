@@ -207,13 +207,104 @@ describe("joyful", () => {
     });
   });
 
+  describe("custom word lists", () => {
+    it("generates words from custom pattern categories", () => {
+      const result = joyful({
+        pattern: ["fruit", "texture"],
+        wordLists: {
+          fruit: ["apple"],
+          texture: ["linen"],
+        },
+      });
+
+      expect(result).toBe("apple-linen");
+    });
+
+    it("omits words from custom lists", () => {
+      const result = joyful({
+        omit: ["pear", "silk"],
+        pattern: ["fruit", "texture"],
+        wordLists: {
+          fruit: ["apple", "pear"],
+          texture: ["silk", "linen"],
+        },
+      });
+
+      expect(result).toBe("apple-linen");
+    });
+
+    it("omits words from built-in pattern categories", () => {
+      const [remainingAnimal] = animals;
+      const result = joyful({
+        omit: animals.filter((word) => word !== remainingAnimal),
+        pattern: ["animal", "fruit"],
+        wordLists: {
+          fruit: ["apple"],
+        },
+      });
+
+      expect(result).toBe(`${remainingAnimal}-apple`);
+    });
+
+    it("supports custom lists with maxLength", () => {
+      const result = joyful({
+        maxLength: 11,
+        pattern: ["fruit", "texture"],
+        wordLists: {
+          fruit: ["apple", "pomegranate"],
+          texture: ["linen"],
+        },
+      });
+
+      expect(result).toBe("apple-linen");
+    });
+
+    it("chooses a bounded pattern word that leaves overlapping lists possible", () => {
+      const result = joyful({
+        maxLength: 12,
+        pattern: ["first", "second"],
+        wordLists: {
+          first: ["shared", "alpha"],
+          second: ["shared"],
+        },
+      });
+
+      expect(result).toBe("alpha-shared");
+    });
+
+    it("chooses a pattern word that leaves overlapping lists possible", () => {
+      const result = joyful({
+        pattern: ["first", "second"],
+        wordLists: {
+          first: ["shared", "alpha"],
+          second: ["shared"],
+        },
+      });
+
+      expect(result).toBe("alpha-shared");
+    });
+
+    it("throws when omitted words leave a pattern category empty", () => {
+      expect(() =>
+        joyful({
+          omit: ["apple"],
+          pattern: ["fruit", "texture"],
+          wordLists: {
+            fruit: ["apple"],
+            texture: ["linen"],
+          },
+        })
+      ).toThrow('Not enough unique words in pattern category "fruit"');
+    });
+  });
+
   describe("permutations", () => {
     it("returns the default 2-word count", () => {
       expect(permutations()).toBe(997_425);
     });
 
     it("returns the default 3-word count", () => {
-      expect(permutations({ segments: 3 })).toBe(2_917_468_125);
+      expect(permutations({ segments: 3 })).toBe(2_916_470_700);
     });
 
     it("counts adjective and animal patterns", () => {
@@ -224,6 +315,72 @@ describe("joyful", () => {
       expect(permutations({ pattern: ["color", "nature", "animal"] })).toBe(
         4_674_684
       );
+    });
+
+    it("counts custom pattern categories", () => {
+      expect(
+        permutations({
+          pattern: ["fruit", "texture"],
+          wordLists: {
+            fruit: ["apple", "pear"],
+            texture: ["linen", "silk", "velvet"],
+          },
+        })
+      ).toBe(6);
+    });
+
+    it("counts omitted words", () => {
+      expect(
+        permutations({
+          omit: ["pear", "silk"],
+          pattern: ["fruit", "texture"],
+          wordLists: {
+            fruit: ["apple", "pear"],
+            texture: ["linen", "silk", "velvet"],
+          },
+        })
+      ).toBe(2);
+    });
+
+    it("does not double-count duplicate custom prefixes", () => {
+      const duplicatePrefixCount = permutations({
+        wordLists: {
+          adjective: ["bright"],
+          color: ["bright"],
+        },
+      });
+      const singlePrefixCount = permutations({
+        wordLists: {
+          adjective: ["bright"],
+          color: [],
+        },
+      });
+
+      expect(duplicatePrefixCount).toBe(singlePrefixCount);
+    });
+
+    it("counts only unique generatable custom pattern permutations", () => {
+      expect(
+        permutations({
+          pattern: ["first", "second"],
+          wordLists: {
+            first: ["shared", "alpha"],
+            second: ["shared"],
+          },
+        })
+      ).toBe(1);
+    });
+
+    it("does not count impossible duplicate-only pattern permutations", () => {
+      expect(
+        permutations({
+          pattern: ["first", "second"],
+          wordLists: {
+            first: ["apple"],
+            second: ["apple"],
+          },
+        })
+      ).toBe(0);
     });
 
     it("throws for unknown pattern categories", () => {

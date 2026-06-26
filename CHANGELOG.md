@@ -1,5 +1,11 @@
 # joyful
 
+## 1.3.0
+
+### Minor Changes
+
+- 0f36746: Add custom word lists and exact-word omission support to the API and CLI. Permutation counts now reflect unique generatable names when custom lists overlap.
+
 ## 1.2.0
 
 ### Minor Changes

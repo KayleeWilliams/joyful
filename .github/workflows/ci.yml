@@ -19,6 +19,12 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      # Pinned so CI matches the release job rather than drifting with
+      # whatever Node the runner image happens to bundle.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
       # The size report shells out to `npm pack --json`, whose output shape
       # changed in npm 12. Runner images still bundle npm 10, so pin npm 12
       # to exercise the shape published releases actually run against, and

@@ -1,8 +1,10 @@
 name: CI
 
 on:
+  # No branch filter: `branches` matches a pull request's base, so restricting
+  # it to main skipped CI entirely on stacked pull requests, which target the
+  # branch below them rather than main.
   pull_request:
-    branches: [main]
 
 permissions:
   contents: read

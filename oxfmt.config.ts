@@ -1,3 +1,1 @@
-import config from "ultracite/oxfmt";
-
-export default config;
+export { default } from "ultracite/oxfmt";

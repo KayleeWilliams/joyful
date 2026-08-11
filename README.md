@@ -67,8 +67,7 @@ Pattern rules:
 
 ## Custom Word Lists
 
-Use `wordLists` to add named word pools that can be selected by `pattern`.
-Use `omit` to exclude exact words from both built-in and custom lists.
+Use `wordLists` to add named word pools that can be selected by `pattern`. Use `omit` to exclude exact words from both built-in and custom lists.
 
 ```ts
 joyful({
@@ -89,8 +88,7 @@ joyful({
 }); // "apple-linen"
 ```
 
-Custom category names are additive. If a custom list uses a built-in category
-name, such as `animal`, it replaces that built-in category for the current call.
+Custom category names are additive. If a custom list uses a built-in category name, such as `animal`, it replaces that built-in category for the current call.
 
 ## CLI
 
@@ -167,25 +165,25 @@ Permutation counts include only unique names that can be generated without repea
 
 Returns a generated name as a `string`.
 
-| Option      | Type                                    | Default | Description                           |
-| ----------- | --------------------------------------- | ------- | ------------------------------------- |
-| `segments`  | `number`                                | `2`     | Number of words to generate           |
-| `pattern`   | `JoyfulCategory[]` or custom `string[]` | none    | Category pattern for each word        |
-| `wordLists` | `Record<string, readonly string[]>`     | none    | Custom named word lists               |
-| `omit`      | `readonly string[]`                     | none    | Exact words to exclude                |
-| `separator` | `string`                                | `"-"`   | Character(s) between words            |
-| `maxLength` | `number`                                | none    | Maximum length of the returned string |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `segments` | `number` | `2` | Number of words to generate |
+| `pattern` | `JoyfulCategory[]` or custom `string[]` | none | Category pattern for each word |
+| `wordLists` | `Record<string, readonly string[]>` | none | Custom named word lists |
+| `omit` | `readonly string[]` | none | Exact words to exclude |
+| `separator` | `string` | `"-"` | Character(s) between words |
+| `maxLength` | `number` | none | Maximum length of the returned string |
 
 ### `permutations(options?)`
 
 Returns the number of possible unbounded combinations as a `number`.
 
-| Option      | Type                                    | Default | Description                    |
-| ----------- | --------------------------------------- | ------- | ------------------------------ |
-| `segments`  | `number`                                | `2`     | Number of words to count       |
-| `pattern`   | `JoyfulCategory[]` or custom `string[]` | none    | Category pattern for each word |
-| `wordLists` | `Record<string, readonly string[]>`     | none    | Custom named word lists        |
-| `omit`      | `readonly string[]`                     | none    | Exact words to exclude         |
+| Option | Type | Default | Description |
+| --- | --- | --- | --- |
+| `segments` | `number` | `2` | Number of words to count |
+| `pattern` | `JoyfulCategory[]` or custom `string[]` | none | Category pattern for each word |
+| `wordLists` | `Record<string, readonly string[]>` | none | Custom named word lists |
+| `omit` | `readonly string[]` | none | Exact words to exclude |
 
 ### `JoyfulCategory`
 
@@ -267,9 +265,7 @@ All word lists are manually curated to be safe for work and family-friendly. Eve
 
 ## Benchmarks
 
-Run `bun run perf` to generate the runtime, startup, package size, and consumer
-bundle size report. See [BENCHMARKS.md](./BENCHMARKS.md) for what the report
-measures and how to interpret it.
+Run `bun run perf` to generate the runtime, startup, package size, and consumer bundle size report. See [BENCHMARKS.md](./BENCHMARKS.md) for what the report measures and how to interpret it.
 
 ## Credits
 

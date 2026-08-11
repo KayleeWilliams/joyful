@@ -1,5 +1,12 @@
 # joyful
 
+## 1.3.1
+
+### Patch Changes
+
+- 38e16e1: Correct the declared license to MIT. `LICENSE.md` and the README already stated MIT, but `package.json` still declared ISC, so the published npm metadata advertised the wrong license.
+- 02fac51: Generate type declarations with `tsc` instead of tsup's bundled `rollup-plugin-dts`, which is incompatible with TypeScript 7. The exported type surface is unchanged; the package no longer ships the unreferenced `dist/*.d.mts` duplicates, since `exports` resolves types to `dist/index.d.ts` for both the import and require conditions.
+
 ## 1.3.0
 
 ### Minor Changes

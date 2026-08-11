@@ -49,13 +49,17 @@ const codeBlock = (contents: string): string =>
 
 const stripAnsi = (value: string): string => value.replace(ansiPattern, "");
 
+const runtimeResultPattern =
+  /^(?<caseName>.+?)\s+(?<value>[0-9.]+)\s+(?<unit>ns|µs|ms)\/iter\b/gmu;
+
 const parseRuntimeResults = (output: string): RuntimeResult[] =>
-  [...output.matchAll(/^(.+?)\s+([0-9.]+)\s+(ns|µs|ms)\/iter\b/gmu)].map(
-    ([, caseName, value, unit]) => ({
+  [...output.matchAll(runtimeResultPattern)]
+    .map((match) => match.groups)
+    .filter((groups) => groups !== undefined)
+    .map(({ caseName, value, unit }) => ({
       caseName: caseName.trim(),
       mean: `${value} ${unit}/iter`,
-    })
-  );
+    }));
 
 const runtimeSummaryTable = (output: string): string => {
   const rows = parseRuntimeResults(output);

@@ -31,6 +31,13 @@ interface PackSummary {
   unpackedSize: number;
 }
 
+/**
+ * `npm pack --json` returns an array of summaries on npm < 12 and an object
+ * keyed by package name on npm >= 12. Both shapes are accepted so the report
+ * works regardless of the npm bundled with the active Node/CI runner.
+ */
+type PackOutput = PackSummary[] | Record<string, PackSummary>;
+
 interface ConsumerBundlePaths {
   entryPath: string;
   outDir: string;
@@ -83,7 +90,8 @@ const getPackSummary = (): PackSummary => {
     },
     stdio: ["ignore", "pipe", "inherit"],
   });
-  const [summary] = JSON.parse(output) as PackSummary[];
+  const parsed = JSON.parse(output) as PackOutput;
+  const [summary] = Array.isArray(parsed) ? parsed : Object.values(parsed);
 
   if (!summary) {
     throw new Error("npm pack did not return package metadata.");

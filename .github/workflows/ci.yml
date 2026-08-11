@@ -17,6 +17,15 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      # The size report shells out to `npm pack --json`, whose output shape
+      # changed in npm 12. Runner images still bundle npm 10, so pin npm 12
+      # to exercise the shape published releases actually run against, and
+      # print the version so the log records which shape was tested.
+      - name: Setup npm 12
+        run: |
+          npm install -g npm@12
+          npm --version
+
       - name: Install dependencies
         run: bun install
 

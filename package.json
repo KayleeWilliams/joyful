@@ -54,6 +54,7 @@
     "fix": "ultracite fix",
     "permutations": "bun scripts/permutations.ts",
     "validate": "bun scripts/validate.ts",
+    "validate:check": "bun scripts/validate.ts --check",
     "perf": "bun scripts/perf.ts",
     "changeset": "changeset",
     "release": "changeset publish"

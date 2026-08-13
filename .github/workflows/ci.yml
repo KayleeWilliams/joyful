@@ -48,5 +48,13 @@ jobs:
       - name: Run tests
         run: bun test
 
+      # The word lists are the package's core data, but nothing else in CI
+      # reads them: a pull request adding a duplicate, plural, or hyphenated
+      # word passes the build, lint, typecheck, and tests untouched. The
+      # `:check` variant reports without rewriting, so a bad entry fails the
+      # job instead of being silently repaired in the runner.
+      - name: Validate word lists
+        run: bun run validate:check
+
       - name: Run performance reports
         run: bun run perf

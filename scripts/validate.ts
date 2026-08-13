@@ -3,6 +3,12 @@ import path from "node:path";
 
 const libDir = path.join(import.meta.dirname, "..", "src", "lib");
 
+// Under `--check` the word lists are reported on but never rewritten, and a
+// bad entry exits non-zero. CI needs this: the default fixing behaviour would
+// quietly repair the checkout and pass, so a pull request adding a duplicate
+// would go green.
+const checkOnly = process.argv.includes("--check");
+
 interface Duplicate {
   word: string;
   file1: string;
@@ -104,21 +110,21 @@ const checkWordValidity = (word: string, ctx: WordContext): boolean => {
   return true;
 };
 
+const removal = checkOnly ? "should be removed from" : "removed from";
+
 const reportDuplicate = ({ word, file1, file2 }: Duplicate): void => {
   if (file2 === "Hyphenated") {
-    console.log(`- "${word}" removed from ${file1} (hyphenated word)`);
+    console.log(`- "${word}" ${removal} ${file1} (hyphenated word)`);
   } else if (file2 === "Contains space") {
-    console.log(`- "${word}" removed from ${file1} (contains space)`);
+    console.log(`- "${word}" ${removal} ${file1} (contains space)`);
   } else if (/e?s$/u.test(word)) {
-    console.log(
-      `- "${word}" removed from ${file2} (plural of word in ${file1})`
-    );
+    console.log(`- "${word}" ${removal} ${file2} (plural of word in ${file1})`);
   } else if (word.endsWith("y")) {
     console.log(
-      `- "${word}" removed from ${file2} (y-ending variant of word in ${file1})`
+      `- "${word}" ${removal} ${file2} (y-ending variant of word in ${file1})`
     );
   } else {
-    console.log(`- "${word}" removed from ${file2} (kept in ${file1})`);
+    console.log(`- "${word}" ${removal} ${file2} (kept in ${file1})`);
   }
 };
 
@@ -137,7 +143,10 @@ const processFile = (file: string, ctx: Omit<WordContext, "file">): void => {
 
   const fileCtx: WordContext = { ...ctx, file };
   content = content.filter((word) => checkWordValidity(word, fileCtx));
-  fs.writeFileSync(filePath, `${JSON.stringify(content, null, 2)}\n`);
+
+  if (!checkOnly) {
+    fs.writeFileSync(filePath, `${JSON.stringify(content, null, 2)}\n`);
+  }
 };
 
 const reportResults = (duplicates: Duplicate[]): void => {
@@ -148,7 +157,9 @@ const reportResults = (duplicates: Duplicate[]): void => {
     return;
   }
   console.log(
-    "Duplicate, related, hyphenated, space-containing, plural, or y-ending words found and removed:"
+    checkOnly
+      ? "Duplicate, related, hyphenated, space-containing, plural, or y-ending words found:"
+      : "Duplicate, related, hyphenated, space-containing, plural, or y-ending words found and removed:"
   );
   for (const duplicate of duplicates) {
     reportDuplicate(duplicate);
@@ -169,6 +180,10 @@ const validateAndRemoveDuplicates = (): void => {
   }
 
   reportResults(ctx.duplicates);
+
+  if (checkOnly && ctx.duplicates.length > 0) {
+    process.exitCode = 1;
+  }
 };
 
 validateAndRemoveDuplicates();
